@@ -10,7 +10,7 @@
 #}
 .text
 	# Definir variable para almacenar n. de discos
-	addi s0, zero, 3	# numero de discos
+	addi s0, zero, 4	# numero de discos
 	lui s1, 0x10010 	# declarar apuntador al arr Origen
 	
 	# Guardar datos en torre Origen
@@ -32,7 +32,10 @@ endfor: addi s1, s1, -4
 	add a3, zero, s1	# guardamos en a3 el puntero al ORIGEN
 	add a4, zero, s2	# guardamos en a4 el puntero al AUX
 	add a5, zero, s3	# guardamos en a5 el puntero al DESTINO
-	jal moverTorre
+	add t4, zero, s0	# cantidad de discos en ORIGEN
+	addi t5, zero, 0	# cantidad de discos en AUX
+	addi t6, zero, 0	# cantidad de discos en DESTINO
+ 	jal moverTorre
 	jal endcode
 	
 #int moverTorre(int altura, char origen, char intermedio, char destino) {
@@ -53,10 +56,10 @@ moverTorre: 	addi t0, zero, 1
 		sw a2, 0(sp)
 		addi sp, sp, -4		# Cargamos origen
 		sw a3, 0(sp)		
-		addi sp, sp, -4		# Carganos auxiliar
-		sw a4, 0(sp)
 		addi sp, sp, -4		# Cargamos destino
 		sw a5, 0(sp)	
+		addi sp, sp, -4		# Carganos auxiliar
+		sw a4, 0(sp)
 		# modificacion de argumentos
 		addi a2, a2, -1
 		# Cambiar valores de a3, a4 y a5
@@ -66,10 +69,10 @@ moverTorre: 	addi t0, zero, 1
 		# llamada recursiva
 		jal moverTorre
 		# pop stack -> destino, aux, origen, altura-1, ra
-		lw a5, 0(sp)		# Sacamos destino
-		addi sp, sp, 4	
 		lw a4, 0(sp)		# Sacamos auxiliar
 		addi sp, sp, 4
+		lw a5, 0(sp)		# Sacamos destino
+		addi sp, sp, 4	
 		lw a3, 0(sp)		# Sacamos origen
 		addi sp, sp, 4
 		lw a2, 0(sp)		# Sacamos altura
@@ -97,13 +100,45 @@ moverTorre: 	addi t0, zero, 1
 		addi a7, zero, 11
 		addi a0, zero, 0xA
 		ecall
-		# Mover valores a registros correspondientes
 		
-		# Cambiar valores de a3, a4 y a5
-		add t1, zero, a3	# t1 = origen
-		add a3, zero, a4	# origen = aux
-		add a4, zero, t1	# aux = origen
-		
+		# MOVIMIENTO DE VALORES
+		#calcular el offset origen
+if_a3:		bne a3, s1, elseif_a3	# origen != 0x10010008
+		addi t4, t4, -1		# t4 = t4 -1
+		slli t1, t4, 2		# t1 = t4 * 4
+		sub t1, a3, t1		# t1 = t1 - a3
+		jal zero, load
+elseif_a3:	bne a3, s2, else_a3	# origen != 0x10010014
+		addi t5, t5, -1
+		slli t1, t5, 2
+		sub t1, a3, t1
+		jal zero, load
+else_a3:	bne a3, s3, load	# origen != 0x10010020
+		addi t6, t6, -1
+		slli t1, t6, 2
+		sub t1, a3, t1
+		jal zero, load	
+		# obtener el valor del origen e igualar su posicion a cero	
+load:		lw t0, 0(t1)
+		sw zero, 0(t1)
+		# calcular el offset destino
+if_a5:		bne a5 s1, elseif_a5	# destino != 0x10010008
+		slli t1, t4, 2
+		sub t1, a5, t1
+		addi t4, t4, 1
+		jal zero, store
+elseif_a5:	bne a5, s2, else_a5	# destino != 0x10010014
+		slli t1, t5, 2
+		sub t1, a5, t1
+		addi t5, t5, 1
+		jal zero, store
+else_a5:	bne a5, s3, store	# destino != 0x10010020
+		slli t1, t6, 2
+		sub t1, a5, t1
+		addi t6, t6, 1
+		jal zero, store
+		# almacenar el valor en el destino	
+store:		sw t0, 0(t1)		
 		
 		# SEGUNDA LLAMADA RECURSIVA
 		# push stack -> ra, altura-1, aux, origen, destino
@@ -119,6 +154,10 @@ moverTorre: 	addi t0, zero, 1
 		sw a5, 0(sp)
 		# modificacion de argumentos
 		addi a2, a2, -1
+		# Cambiar valores de a3, a4 y a5
+		add t1, zero, a3	# t1 = origen
+		add a3, zero, a4	# origen = aux
+		add a4, zero, t1	# aux = origen
 		# llamada recursiva
 		jal moverTorre
 		# pop stack -> destino, origen, aux, altura-1, ra
@@ -132,7 +171,8 @@ moverTorre: 	addi t0, zero, 1
 		addi sp, sp, 4
 		lw ra, 0(sp)		# Sacamos ra
 		addi sp, sp, 4
+
 		jalr ra
-		
-endmoverTorre:	jalr ra
+endmoverTorre: 	jalr ra
+
 endcode: nop
