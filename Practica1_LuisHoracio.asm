@@ -10,7 +10,7 @@
 #}
 .text
 	# Definir variable para almacenar n. de discos
-	addi s0, zero, 4	# numero de discos
+	addi s0, zero, 3	# numero de discos
 	lui s1, 0x10010 	# declarar apuntador al arr Origen
 	
 	# Guardar datos en torre Origen
